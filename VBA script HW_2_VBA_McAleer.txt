@@ -1,0 +1,103 @@
+Sub hwVBA()
+
+Dim r As Long
+Dim volume As Variant
+Dim out As Integer
+Dim LastRow As Long
+Dim ws As Worksheet
+Dim openvalue As Double
+Dim closevalue As Double
+Dim valuechange As Double
+Dim i As Double
+Dim max_inc As Double
+Dim min_inc As Double
+Dim max_vol As Double
+
+Dim max_inc_tick As Variant
+Dim min_inc_tick As Variant
+Dim max_vol_tick As Variant
+Dim columnlength As Long
+Dim x As Integer
+
+
+
+
+For Each ws In Worksheets      'Should loop through all of the sheets
+ws.Select                       'selects the current sheet, need this or it doesnt loop it stays on each sheet
+
+    LastRow = ws.Cells(Rows.Count, 1).End(xlUp).Row    'finds the last row in column one
+    Cells(1, 9).Value = "Ticker"                        'these next four output the column titles for the ouputs of interest
+    Cells(1, 12).Value = "Total Volume"
+    Cells(1, 10).Value = "Yearly Change"
+    Cells(1, 11).Value = "Percent Change"
+    
+    out = 2                                     'sets the first output line to row 2
+    openvalue = Cells(2, 3).Value               'collects the open value for the first stock on each worksheet
+    
+    For r = 2 To LastRow                        'loops through row 2 to the calculated last row
+        If Cells(r + 1, 1).Value <> Cells(r, 1).Value Then          'checks to see if the variable in column one is different than the one below it
+            volume = volume + Cells(r, 7).Value                     'collects the vlaue of interest(volume) from the last row of the same variable name
+            Cells(out, 9).Value = Cells(r, 1).Value                 'outputs the name of the variable
+            Cells(out, 12).Value = volume                           'finds the close value as the r(last value of same variable name and column of interest (6)
+            closevalue = Cells(r, 6).Value                          'calculates the volume change from the open to close
+            valuechange = closevalue - openvalue                   'outputs the valuechange to selected column (10)
+            Cells(out, 10).Value = valuechange                      'decides whether the value is + or - and changes to green if + and red if not
+            If Cells(out, 10).Value > 0 Then
+                Cells(out, 10).Interior.Color = vbGreen
+            Else
+                Cells(out, 10).Interior.Color = vbRed
+            End If
+            If (openvalue = 0) Then                                     'this sets the condition to avoid if denominator is zero to output NA
+            Cells(out, 11).Value = "NA"                                    'otherwise you get an overflow error
+            Else
+            Cells(out, 11).Value = (valuechange / openvalue)           'outputs the ratio change of the valuechange from what it opened at
+            End If
+            
+            Cells(out, 11).NumberFormat = "0.00%"                       'changes the value in column 11 to a % with two decimal places
+            openvalue = Cells(r + 1, 3).Value                    'finds the next open value which would be the column of interest (3) but the next one after r
+                                                                'where r is the last variable of the same condition so r+1 would be first of new named variable
+            
+            volume = 0                                  'resets volume to 0 for next variable calculation
+            out = out + 1                               'increases the row for theoutput by 1
+            
+        Else
+            volume = volume + Cells(r, 7).Value         'adds all of the times that the variable in column one was the same
+        End If
+    Next r
+   
+   
+    max_inc = Application.WorksheetFunction.Max(Columns("K"))       'finds the maximum value in column K
+    min_inc = Application.WorksheetFunction.Min(Columns("K"))       'finds the minimum value in column K
+    max_vol = Application.WorksheetFunction.Max(Columns("L"))       'finds the maximum value in column L
+    
+    columnlength = ws.Cells(Rows.Count, 11).End(xlUp).Row           'finds the last row in column k
+    For x = 2 To columnlength                                       'loop to run through all the column in the output area
+        If Cells(x, 11) = max_inc Then                              'matches the value for my high and then returns the ticker name associated with that value
+            max_inc_tick = Cells(x, 9).Value
+      
+        ElseIf Cells(x, 11) = min_inc Then
+            min_inc_tick = Cells(x, 9).Value                        'matches the value for my low and then returns the ticker name associated with that value
+      
+        ElseIf Cells(x, 12) = max_vol Then
+            max_vol_tick = Cells(x, 9).Value                        'matches the value for my high in column 12 and then returns the ticker name associated with that value
+        End If
+        Next x
+        
+    Range("N2").Value = "Greatest % Increase"
+    Range("N3").Value = "Greatest % Decrease"
+    Range("N4").Value = "Largest Volume"
+    Range("P2").Value = max_inc                             'these all output the data of interest
+    Range("P3").Value = min_inc
+    Range("P4").Value = max_vol
+    Range("O2").Value = max_inc_tick
+    Range("O3").Value = min_inc_tick
+    Range("O4").Value = max_vol_tick
+    Range("O1").Value = "Ticker"
+    Range("P1").Value = "Value"
+    Range("P2:P3").NumberFormat = "0.00%"
+    Range("N1:P4").Columns.AutoFit                      'this changes the width of the columns automatically based on what is inside
+Next ws
+
+
+
+End Sub
